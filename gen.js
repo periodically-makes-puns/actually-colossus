@@ -5,16 +5,27 @@ let inSignups = false;
 let restime;
 let vottime;
 let contestantLimit;
+let vscreens = new Map();
 let votescreens = new Map();
 let votes = new Map();
 let responses = ["Keep sweating. Sweat is liquid, and liquids kill fires, right?","Strangle yourself, so you'll never burn to death, just suffocate.","Dash for the nearest water source! Preferably an unpolluted one.","I'm a \"How To Escape A Fire\" book! ...Won't help."];
+for (i = 0; i < responses.length; i++) {
+  votes.set(String.fromCharCode(65+i), []);
+}
+function avg(arr) {
+  return arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0)/arr.length;
+}
+function stdev(arr) {
+  let avg = avg(arr);
+  return Math.sqrt(arr.reduce((accumulator, currentValue) => accumulator + (avg-currentValue)*(avg-currentValue), 0)/(arr.length-1));
+}
 function factorial(n) {
   if (n == 0 || n == 1) {return 1};
   return factorial(n-1)*n;
 }
 function factbase(n,minlen) {
-  factlog = 0;
-  res = [];
+  let factlog = 0;
+  let res = [];
   for (i = 1; factorial(i) <= n; i++) {
     factlog++;
     res.push(0);
