@@ -1,3 +1,49 @@
+function Map() {
+  this.keys = [];
+  this.values = [];
+  this.size = 0;
+  this.clear = function () {
+    this.keys = [];
+    this.values = [];
+    this.size = 0;
+    return;
+  }
+  this.delete = function(key) {
+    let n = this.keys.indexOf(key)
+    if (n == -1) {return false};
+    this.keys.splice(n,1);
+    this.values.splice(n,1);
+    return true;
+  }
+  this.entries = function* () {
+    for (i = 0; i < this.keys.length; i++) {
+      yield [this.keys[i], this.values[i]];
+    }
+  }
+  this.get = function (key) {
+    let n = this.keys.indexOf(key);
+    if (n == -1) {return undefined};
+    return this.values[n];
+  }
+  this.has = function (key) {
+    return this.keys.indexOf(key) != -1;
+  }
+  this.keys = function* () {
+    for (i = 0; i < this.keys.length; i++) {
+      yield this.keys[i];
+    }
+  }
+  this.set = function (key,value) {
+    this.keys.push(key);
+    this.values.push(value);
+    return this;
+  }
+  this.values = function* () {
+    for (i = 0; i < this.values.length; i++) {
+      yield this.values[i];
+    }
+  }
+}
 let queue = [];
 let contestantList = [];
 let qmtInSession = false;
