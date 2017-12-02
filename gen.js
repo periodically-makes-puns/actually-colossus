@@ -1,71 +1,82 @@
 function Map() {
-  this.keys = [];
-  this.values = [];
+  this.keylist = [];
+  this.valuelist = [];
   this.size = 0;
   this.clear = function () {
-    this.keys = [];
-    this.values = [];
+    this.keylist = [];
+    this.valuelist = [];
+
     this.size = 0;
     return;
   }
   this.delete = function(key) {
-    let n = this.keys.indexOf(key)
+
+    let n = this.keylist.indexOf(key)
     if (n == -1) {return false};
-    this.keys.splice(n,1);
+    this.keylist.splice(n,1);
     this.values.splice(n,1);
+    this.size--;
     return true;
   }
   this.entries = function* () {
-    for (i = 0; i < this.keys.length; i++) {
-      yield [this.keys[i], this.values[i]];
+    for (let i = 0; i < this.keys.length; i++) {
+      yield [this.keylist[i], this.valuelist[i]];
     }
   }
   this.get = function (key) {
-    let n = this.keys.indexOf(key);
+    let n = this.keylist.indexOf(key);
+
     if (n == -1) {return undefined};
     return this.values[n];
   }
   this.has = function (key) {
-    return this.keys.indexOf(key) != -1;
+    return this.keylist.indexOf(key) != -1;
   }
   this.keys = function* () {
-    for (i = 0; i < this.keys.length; i++) {
-      yield this.keys[i];
+    for (let i = 0; i < this.keylist.length; i++) {
+      yield this.keylist[i];
     }
   }
   this.set = function (key,value) {
-    this.keys.push(key);
-    this.values.push(value);
+    this.keylist.push(key);
+    this.valuelist.push(value);
+    this.size++;
     return this;
   }
   this.values = function* () {
-    for (i = 0; i < this.values.length; i++) {
-      yield this.values[i];
+    for (let i = 0; i < this.valuelist.length; i++) {
+      yield this.valuelist[i];
     }
   }
 }
-let queue = [];
-let contestantList = [];
-let qmtInSession = false;
-let inSignups = false;
-let restime;
-let vottime;
-let contestantLimit;
-let votescreens = new Map();
-let votes = new Map();
+let vscreens = new Map();
+let weights = new Map();
+let votes = [];
+let names = ["lmao","lmaoo","lmaooo","lmaoooo","lmaooooo"];
+
 let responses = ["Keep sweating. Sweat is liquid, and liquids kill fires, right?","Strangle yourself, so you'll never burn to death, just suffocate.","Dash for the nearest water source! Preferably an unpolluted one.","I'm a \"How To Escape A Fire\" book! ...Won't help."];
+for (let i = 0; i < responses.length; i++) {
+  votes.set(i, []);
+}
+function avg(arr) {
+  return arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0)/arr.length;
+}
+function stdev(arr) {
+  let avg = avg(arr);
+  return Math.sqrt(arr.reduce((accumulator, currentValue) => accumulator + (avg-currentValue)*(avg-currentValue), 0)/(arr.length-1));
+}
 function factorial(n) {
   if (n == 0 || n == 1) {return 1};
   return factorial(n-1)*n;
 }
 function factbase(n,minlen) {
-  factlog = 0;
-  res = [];
-  for (i = 1; factorial(i) <= n; i++) {
+  let factlog = 0;
+  let res = [];
+  for (let i = 1; factorial(i) <= n; i++) {
     factlog++;
     res.push(0);
   }
-  for (i = factlog; i>0; i--) {
+  for (let i = factlog; i>0; i--) {
     while (n >= factorial(i)) {
       res[factlog-i]++;
       n -= factorial(i);
@@ -77,20 +88,17 @@ function factbase(n,minlen) {
   return res;
 }
 module.exports = (msg) => {
-    argusGen = {
-      "help": " [cmd]"
+    let argusGen = {
+      "help": " [cmd]",
       "vote-screen": ""
-      "request": " [number]"
     }
-    valuesGen = {
-      "help": "Geez, I thought you knew how gen$help worked if you're flipping using it.\nBut because this is still a flipping help message, here's your damned info.\n*Gives information about gen$[cmd].*"
+    let valuesGen = {
+      "help": "Geez, I thought you knew how gen$help worked if you're flipping using it.\nBut because this is still a flipping help message, here's your damned info.\n*Gives information about gen$[cmd].*",
       "vote-screen": "Gives you a random voting screen."
-      "request": "Request a specific voting screen, by number."
     }
-    argdescsGen = {
-      "help": "*[cmd]: A valid command in module gen.*"
+    let argdescsGen = {
+      "help": "*[cmd]: A valid command in module gen.*",
       "vote-screen": "No arguments."
-      "request": "[number]: An integer between 0 and the factorial of the number of responses."
     }
     if (msg.content == "gen$help") {
       msg.channel.send({embed: {
@@ -122,8 +130,7 @@ module.exports = (msg) => {
         }
       });
     } else if (msg.content.startsWith("gen$help")) {
-      args = msg.content.split(/ +/g);
-      console.log(args);
+      let args = msg.content.split(/ +/g);
       try {
         msg.channel.send({embed: {
             color: 4369908,
@@ -156,86 +163,70 @@ module.exports = (msg) => {
           votescreens.set(msg.author.id, []);
         }
         placeholder = responses;
-        let screenNum = Math.ceil(Math.random()*factorial(responses.length))-1;
-        let screen = factbase(screenNum,responses.length-1);
-        
-        let text = "";
-        for (i = 0; i < screen.length; i++) {
-          let words11 = (placeholder[screen[i]].split(" ").length > 10) ? " ***(UH OH OVER 10 WORDS VOTE DOWN)***" : "";
-          text += String.fromCharCode(65+i) + ": ";
-          text += placeholder[screen[i]] + " ";
-          word = (placeholder[screen[i]].split(" ").length == 1) ? " word)" : " words)";
-          text += "(" + placeholder[screen[i]].split(" ").length + word + words11;
-          text += "\n";
-          placeholder.splice(screen[i],1);
+        goto = [];
+        let index = Math.floor(Math.random()*names.length);
+        let screenName = names[n]; 
+        out = "Screen " + screenName + ":\n";
+        for (let i = 0; i < responses.length && i < 10; i++) {
+          let n = Math.floor(Math.random()*placeholder.length);
+          out += String.fromCharCode(65+i);
+          out += placeholder[n];
+          goto.push(placeholder[n]);
+          let k = placeholder[n].split(/ +/g).length;
+          out += " (**" + k + (k == 1) ? "** word)" : "** words)" + (k > 10) ? " ***OVER TEN WORDS VOTE DOWN***\n" : "";
+          placeholder.splice(n,1);
         }
-        text += String.fromCharCode(65+screen.length) + ": ";
-        text += placeholder[0] + " ";
-        word = (placeholder[0].split(" ").length == 1) ? " word)" : " words)";
-        text += "(" + placeholder[0].split(" ").length + word;
-        text += "\n";
-        arr = text.split("\n");
-        msg.channel.send("Screen #" + screenNum + "\n" + arr.slice(0,10).join("\n"));
-        votescreens[msg.author.id].push(screenNum);
+        msg.channel.send(out);
+        names.splice(index,1);
+        msg.channel.send("Vote with gen$vote [screenName] [vote] to me!");
+        vscreens.set(screenName, goto);
     } else if (msg.content.startsWith("gen$vote")) {
       if (msg.channel.type != "dm") {
         msg.channel.send("Keep your votes private, ya bum."); 
         return;
       }
-      args = msg.content.split(/ +/g);
+      let args = msg.content.split(/ +/g);
+      let len = Math.min(10,responses.length);
       try {
-        if (votescreens[msg.author.id].indexOf(parseInt(args[1])) {
-          msg.channel.send("I don't recall sending you that screen. Try again?");
+        if (votescreens.get(msg.author.id).indexOf(args[1]) == -1) {
+          msg.channel.send("I don't recall sending you that screen. Try again? Make sure the screen name matches what I sent you perfectly.");
           return;
         }
       } catch (e) {
         msg.channel.send("I didn't even send you a single voting screen.");
         return;
       }
-      vote = [];
-      for (i = 0; i < args[2].length; i++) {
-        if (args[2].charCodeAt(i) > 74 || args[2].charCodeAt(i) < 65) {
+      let vote = [];
+      for (let i = 0; i < args[2].length; i++) {
+        if (args[2].charCodeAt(i) > 65 + len - 1 || args[2].charCodeAt(i) < 65) {
           msg.channel.send("Invalid character detected!\n```\n" + vote + "\n" + " ".repeat(vote.length-args[2].length+i) + "^" + "\n```\nAre you sure you used only capital letters and numbers in your vote?");
           return;
         }
         vote.push(args[2].charAt(i));
       }
-    } else if (msg.content.startsWith("gen$request")) {
-        if (msg.channel.type != "dm") {
-          msg.channel.send("Keep your votes private, ya bum."); 
-          return;
+      let out = [];
+      out.push(msg.author.id);
+      for (let i = 0; i < responses.length; i++) {
+        out.push(-1);
+      }
+      let thisscreen = vscreens.get(args[1]);
+      let omit = (len - vote.length);
+      let omitscore = omit*(omit - 1) / 2 / (len-1);
+      for (let i = 0; i < len; i++) {
+        if (vote.indexOf(String.fromCharCode(65+i)) == -1) {
+          out[responses.indexOf(thisscreen[i])] = omitscore;
+          continue;
         }
-        if (votescreens.has(msg.author.id)) {
-          msg.channel.send("Only one screen for you.");
-          return;
-        }
-        args = msg.content.split(" ");
-        let responses = ["Keep sweating. Sweat is liquid, and liquids kill fires, right?","Strangle yourself, so you'll never burn to death, just suffocate.","Dash for the nearest water source! Preferably an unpolluted one.","I'm a \"How To Escape A Fire\" book! ...Won't help."];
-        placeholder = responses;
-        let screenNum = parseInt(args[1]);
-        if (screenNum >= factorial(responses.length)) {
-          msg.channel.send("Sorry, but that number's too large! You need a number between 0 and " + (factorial(responses.length) - 1) + "!");
-          return;
-        }
-        let screen = factbase(screenNum,responses.length-1);
-        let text = "";  
-        for (i = 0; i < screen.length; i++) {
-          let words11 = (placeholder[screen[i]].split(" ").length > 10) ? " ***(UH OH OVER 10 WORDS VOTE DOWN)***" : "";
-          text += String.fromCharCode(65+i) + ": ";
-          text += placeholder[screen[i]] + " ";
-          word = (placeholder[screen[i]].split(" ").length == 1) ? " word)" : " words)";
-          text += "(" + placeholder[screen[i]].split(" ").length + word + words11;
-          text += "\n";
-          placeholder.splice(screen[i],1);
-        }
-        text += String.fromCharCode(65+screen.length) + ": ";
-        text += placeholder[0] + " ";
-        word = (placeholder[0].split(" ").length == 1) ? " word)" : " words)";
-        text += "(" + placeholder[0].split(" ").length + word;
-        text += "\n";
-        arr = text.split("\n");
-        msg.channel.send("Screen #" + screenNum + "\n" + arr.slice(0,10).join("\n"));
-        votescreens.set(msg.author.id, screenNum);  
+        out[responses.indexOf(thisscreen[i])] = (len-vote.indexOf(String.fromCharCode(65+i))-1)/(len-1);
+      }
+      votes.push(out);
+      if(weights.has(msg.author.id)) {
+        weights.set(msg.author.id,weights.get(msg.author.id)+1);
+      } else {
+        weights.set(msg.author.id,1);
+      }
+      msg.channel.send("Your vote on " + args[1] + " of " + args[2] + " has been recorded. Have a good day.");
+      client.users["248953835899322370"].send(msg.author.username + " voted with the following array: [" + out.join(", ") + "]");
     } else {
       msg.channel.send("That's not a command in gen, you know. Try gen$help.");
     }
