@@ -8,9 +8,10 @@ let contestantLimit;
 let vscreens = new Map();
 let votescreens = new Map();
 let votes = new Map();
+let names = ["lmao","lmaoo","lmaooo","lmaoooo","lmaooooo"];
 let responses = ["Keep sweating. Sweat is liquid, and liquids kill fires, right?","Strangle yourself, so you'll never burn to death, just suffocate.","Dash for the nearest water source! Preferably an unpolluted one.","I'm a \"How To Escape A Fire\" book! ...Won't help."];
 for (i = 0; i < responses.length; i++) {
-  votes.set(String.fromCharCode(65+i), []);
+  votes.set(i, []);
 }
 function avg(arr) {
   return arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0)/arr.length;
@@ -121,27 +122,23 @@ module.exports = (msg) => {
           votescreens.set(msg.author.id, []);
         }
         placeholder = responses;
-        let screenNum = Math.ceil(Math.random()*factorial(responses.length))-1;
-        let screen = factbase(screenNum,responses.length-1);
-        
-        let text = "";
-        for (i = 0; i < screen.length; i++) {
-          let words11 = (placeholder[screen[i]].split(" ").length > 10) ? " ***(UH OH OVER 10 WORDS VOTE DOWN)***" : "";
-          text += String.fromCharCode(65+i) + ": ";
-          text += placeholder[screen[i]] + " ";
-          word = (placeholder[screen[i]].split(" ").length == 1) ? " word)" : " words)";
-          text += "(" + placeholder[screen[i]].split(" ").length + word + words11;
-          text += "\n";
-          placeholder.splice(screen[i],1);
+        goto = [];
+        let index = Math.floor(Math.random()*names.length);
+        let screenName = names[n]; 
+        out = "Screen " + screenName + ":\n";
+        for (i = 0; i < responses.length && i < 10; i++) {
+          let n = Math.floor(Math.random()*placeholder.length);
+          out += String.fromCharCode(65+i);
+          out += placeholder[n];
+          goto.push(placeholder[n]);
+          let k = placeholder[n].split(/ +/g).length;
+          out += " (" + k + (k == 1) ? " word)" : " words)" + (k > 10) ? " ***OVER TEN WORDS VOTE DOWN***\n" : "";
+          placeholder.splice(n,1);
         }
-        text += String.fromCharCode(65+screen.length) + ": ";
-        text += placeholder[0] + " ";
-        word = (placeholder[0].split(" ").length == 1) ? " word)" : " words)";
-        text += "(" + placeholder[0].split(" ").length + word;
-        text += "\n";
-        arr = text.split("\n");
-        msg.channel.send("Screen #" + screenNum + "\n" + arr.slice(0,10).join("\n"));
-        votescreens[msg.author.id].push(screenNum);
+        msg.channel.send(out);
+        names.splice(index,1);
+        msg.channel.send("Vote with gen$vote [screenName] [vote] to me!");
+        vscreens.set(screenName, goto);
     } else if (msg.content.startsWith("gen$vote")) {
       if (msg.channel.type != "dm") {
         msg.channel.send("Keep your votes private, ya bum."); 
@@ -149,8 +146,8 @@ module.exports = (msg) => {
       }
       args = msg.content.split(/ +/g);
       try {
-        if (votescreens[msg.author.id].indexOf(parseInt(args[1])) {
-          msg.channel.send("I don't recall sending you that screen. Try again?");
+        if (votescreens.get(msg.author.id).indexOf(args[1]) == -1) {
+          msg.channel.send("I don't recall sending you that screen. Try again? Make sure the screen name matches what I sent you perfectly.");
           return;
         }
       } catch (e) {
@@ -159,12 +156,13 @@ module.exports = (msg) => {
       }
       vote = [];
       for (i = 0; i < args[2].length; i++) {
-        if (args[2].charCodeAt(i) > 74 || args[2].charCodeAt(i) < 65) {
+        if (args[2].charCodeAt(i) > 65 + Math.min(10,responses.length) - 1 || args[2].charCodeAt(i) < 65) {
           msg.channel.send("Invalid character detected!\n```\n" + vote + "\n" + " ".repeat(vote.length-args[2].length+i) + "^" + "\n```\nAre you sure you used only capital letters and numbers in your vote?");
           return;
         }
         vote.push(args[2].charAt(i));
       }
+      
     } else if (msg.content.startsWith("gen$request")) {
         if (msg.channel.type != "dm") {
           msg.channel.send("Keep your votes private, ya bum."); 
