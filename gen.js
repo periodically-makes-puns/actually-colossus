@@ -5,10 +5,12 @@ function Map() {
   this.clear = function () {
     this.keylist = [];
     this.valuelist = [];
+
     this.size = 0;
     return;
   }
   this.delete = function(key) {
+
     let n = this.keylist.indexOf(key)
     if (n == -1) {return false};
     this.keylist.splice(n,1);
@@ -23,6 +25,7 @@ function Map() {
   }
   this.get = function (key) {
     let n = this.keylist.indexOf(key);
+
     if (n == -1) {return undefined};
     return this.values[n];
   }
@@ -50,6 +53,7 @@ let vscreens = new Map();
 let weights = new Map();
 let votes = [];
 let names = ["lmao","lmaoo","lmaooo","lmaoooo","lmaooooo"];
+
 let responses = ["Keep sweating. Sweat is liquid, and liquids kill fires, right?","Strangle yourself, so you'll never burn to death, just suffocate.","Dash for the nearest water source! Preferably an unpolluted one.","I'm a \"How To Escape A Fire\" book! ...Won't help."];
 for (let i = 0; i < responses.length; i++) {
   votes.set(i, []);
