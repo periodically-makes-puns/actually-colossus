@@ -1,10 +1,18 @@
+var express = require('express');
+var app = express();
+const http = require('http');
+app.get("/", (request, response) => {
+  console.log(Date.now() + " Ping Received");
+  response.sendStatus(200);
+});
+app.listen(process.env.PORT);
+setInterval(() => {
+  http.get(`http://${process.env.PROJECT_DOMAIN}.glitch.me/`);
+}, 280000);
 const Discord = require("discord.js");
 const client = new Discord.Client();
-const config = require("./config.json");
-
 const gen = require("./gen.js");
 const qmt = require("./qmt.js");
-const puz = require("./puz.js");
 client.on("ready", () => {
   console.log("I was always ready.");
 });
@@ -38,18 +46,12 @@ client.on("message", (message) => {
     case "qmt":
       qmt(client,message);
       break;
-    case "puz":
-      message.channel.send("Oh, so you want a puzzle?");
-      puz(client,message);
-      break;
     case "die":
       if (message.author.id != "248953835899322370") {message.channel.send("nice try"); return};
       message.channel.send("So long, farewell!");
-      to-kill-the-bot(gnight-yall);
       break;
     default:
       message.channel.send(message.content.substring(0,3) + " is not a valid module. The current modules are: gen (**gen**eral), qmt (**Q**uick **M**ini**T**WOWs), and puz (**puz**zles).");
   }
 });
-
-client.login(config.token);
+client.login(process.env.TOKEN);
