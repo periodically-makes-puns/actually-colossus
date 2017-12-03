@@ -10,7 +10,6 @@ function Map() {
     return;
   }
   this.delete = function(key) {
-
     let n = this.keylist.indexOf(key)
     if (n == -1) {return false};
     this.keylist.splice(n,1);
@@ -55,9 +54,6 @@ let votes = [];
 let names = ["lmao","lmaoo","lmaooo","lmaoooo","lmaooooo"];
 
 let responses = ["Keep sweating. Sweat is liquid, and liquids kill fires, right?","Strangle yourself, so you'll never burn to death, just suffocate.","Dash for the nearest water source! Preferably an unpolluted one.","I'm a \"How To Escape A Fire\" book! ...Won't help."];
-for (let i = 0; i < responses.length; i++) {
-  votes.set(i, []);
-}
 function avg(arr) {
   return arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0)/arr.length;
 }
