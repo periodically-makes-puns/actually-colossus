@@ -1,0 +1,19 @@
+{
+  "name": "Colossus",
+  "version": "0.0.1",
+  "description": "Oh, nothing.",
+  "main": "node bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node bot.js"
+  },
+  "engines": {
+    "node": "9.2.0"
+  },
+  "author": "PMP",
+  "dependencies": {
+    "discord.js": "^11.2.1",
+    "enmap": "^0.4.2",
+    "express": "^4.16.2"
+  }
+}
