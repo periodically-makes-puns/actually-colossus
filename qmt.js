@@ -53,12 +53,15 @@ let votes = [];
 let queue = [];
 let contestantList = [];
 let status = "none";
+let prompt;
 let restime;
 let vottime;
 let contestantLimit;
 let responses = [];
 let host;
 let args;
+let duelbegin;
+let endtime;
 let argusQmt = {
   "queue": " [contestantLimit] [restime] [vottime]"
 }
@@ -70,7 +73,6 @@ let argdescsQmt = {
 }
     
 module.exports = (client,msg) => {
-    
   switch (msg.content.split(/ +/g)[0]) {
     case "qmt$queue":
       args = msg.content.split(/ +/g);
@@ -80,104 +82,132 @@ module.exports = (client,msg) => {
           return 0;
         }
       }
-      switch (args.length) {
-        case 1:
-          queue.push([msg.author,Infinity,5*60*1000,4*60*1000]);
-          msg.channel.send("You've been queued with no contestant limit, a responding timer of " + 5 + " minutes, and a voting time of " + 4 + " minutes.");
-          break;
-        case 2:
-          try {
-            queue.push([msg.author,parseFloat(args[1]),5*60*1000,4*60*1000]);
-            msg.channel.send("You've been queued with a maximum of " + parseFloat(args[1]) + ", a responding timer of " + 5 + " minutes, and a voting time of " + 4 + " minutes.");            
-          } catch (e) {
-            if (args[1] == "d") {
-              queue.push([msg.author,Infinity, 5*60*1000,4*60*1000]);
+      switch (args[1]) {
+        case "custom":
+          args = args.splice(1,1);
+          switch (args.length) {
+            case 1:
+              queue.push([msg.author,Infinity,5*60*1000,4*60*1000]);
               msg.channel.send("You've been queued with no contestant limit, a responding timer of " + 5 + " minutes, and a voting time of " + 4 + " minutes.");
-            } else {
-              msg.channel.send("That's not a valid response time, you idiot.");
-            }
-          } 
+              break;
+            case 2:
+              try {
+                queue.push([msg.author,parseFloat(args[1]),5*60*1000,4*60*1000]);
+                msg.channel.send("You've been queued with a maximum of " + parseFloat(args[1]) + " contestants, a responding timer of " + 5 + " minutes, and a voting time of " + 4 + " minutes.");            
+              } catch (e) {
+                if (args[1] == "d") {
+                  queue.push([msg.author,Infinity, 5*60*1000,4*60*1000]);
+                  msg.channel.send("You've been queued with no contestant limit, a responding timer of " + 5 + " minutes, and a voting time of " + 4 + " minutes.");
+                } else {
+                  msg.channel.send("That's not a valid response time, you idiot.");
+                }
+              } 
+              break;
+            case 3: 
+              try {
+                contestantLimit = (parseInt(args[1])>1) ? parseInt(args[1]) : "error";
+              } catch (e) {
+                if (args[1] == "d") {
+                  contestantLimit = Infinity;
+                } else {
+                  msg.channel.send("Huh? That isn't even an integer last I checked.");
+                  break;
+                }
+              }
+              try {
+                restime = (parseFloat(args[2])>0) ? parseFloat(args[2]) : "error";
+              } catch (e) {
+                if (args[2] == "d") {
+                  restime = 5;
+                } else {
+                  msg.channel.send("Huh? That's not a decimal, last I checked.");
+                  break;
+                }
+              }
+              if (contestantLimit == "error") {
+                msg.channel.send("That's either 1, 0, or a negative integer. All of which aren't positive and above 2.");
+                break;
+              }
+              if (restime == "error") {
+                msg.channel.send("That's not positive. I can't respond in negative/zero time!");
+                break;
+              }
+              queue.push([msg.author,contestantLimit,restime*60*1000,4*60*1000]);
+              msg.channel.send("You've been queued with a maximum of " + contestantLimit + " contestants, a responding timer of " + restime + " minutes, and a voting time of " + 4 + " minutes.");
+              break;
+            case 4:
+              try {
+                contestantLimit = (parseInt(args[1])>1) ? parseInt(args[1]) : "error";
+              } catch (e) {
+                if (args[1] == "d") {
+                  contestantLimit = Infinity;
+                } else {
+                  msg.channel.send("Huh? That isn't even an integer last I checked.");
+                  break;
+                }
+              }
+              try {
+                restime = (parseFloat(args[2])>0) ? parseFloat(args[2]) : "error";
+              } catch (e) {
+                if (args[2] == "d") {
+                  restime = 5;
+                } else {
+                  msg.channel.send("Huh? That's not a decimal, last I checked.");
+                  break;
+                }
+              }
+              try {
+                vottime = (parseFloat(args[3])>0) ? parseFloat(args[3]) : "error";
+              } catch (e) {
+                if (args[3] == "d") {
+                  restime = 5;
+                } else {
+                  msg.channel.send("Huh? That's not a decimal, last I checked.");
+                  break;
+                }
+              }
+              if (contestantLimit == "error") {
+                msg.channel.send("That's either 1, 0, or a negative integer. All of which aren't positive and above 2.");
+                break;
+              }
+              if (restime == "error") {
+                msg.channel.send("That's not positive. I can't respond in negative/zero time!");
+                break;
+              }
+              if (vottime == "error") {
+                msg.channel.send("That's not positive. I can't respond in negative/zero time!");
+                break;
+              }
+              queue.push([msg.author,contestantLimit,restime*60*1000,vottime*60*1000]);
+              msg.channel.send("You've been queued with a maximum of " + contestantLimit + " contestants, a responding timer of " + restime + " minutes, and a voting time of " + vottime + " minutes.");
+              break;
+            default:
+              msg.channel.send("Too many arguments! Which do you want me to freakin' use?");
+          }
           break;
-        case 3: 
-          try {
-            contestantLimit = (parseInt(args[1])>1) ? parseInt(args[1]) : "error";
-          } catch (e) {
-            if (args[1] == "d") {
-              contestantLimit = Infinity;
-            } else {
-              msg.channel.send("Huh? That isn't even an integer last I checked.");
-              break;
-            }
-          }
-          try {
-            restime = (parseFloat(args[2])>0) ? parseFloat(args[2]) : "error";
-          } catch (e) {
-            if (args[2] == "d") {
-              restime = 5;
-            } else {
-              msg.channel.send("Huh? That's not a decimal, last I checked.");
-              break;
-            }
-          }
-          if (contestantLimit == "error") {
-            msg.channel.send("That's either 1, 0, or a negative integer. All of which aren't positive and above 2.");
-            break;
-          }
-          if (restime == "error") {
-            msg.channel.send("That's not positive. I can't respond in negative/zero time!");
-            break;
-          }
-          queue.push(contestantLimit,restime*60*1000,4*60*1000);
-          msg.channel.send("You've been queued with a maximum of " + contestantLimit + ", a responding timer of " + restime + " minutes, and a voting time of " + 4 + " minutes.");
+        case "normal":
+          queue.push([msg.author,Infinity,5*60*1000,4*60*1000]);
+          msg.channel.send("You're using the normal settings of no contestant limit, 5 minutes to respond, and 4 minutes to vote.");
           break;
-        case 4:
-          try {
-            contestantLimit = (parseInt(args[1])>1) ? parseInt(args[1]) : "error";
-          } catch (e) {
-            if (args[1] == "d") {
-              contestantLimit = Infinity;
-            } else {
-              msg.channel.send("Huh? That isn't even an integer last I checked.");
-              break;
-            }
-          }
-          try {
-            restime = (parseFloat(args[2])>0) ? parseFloat(args[2]) : "error";
-          } catch (e) {
-            if (args[2] == "d") {
-              restime = 5;
-            } else {
-              msg.channel.send("Huh? That's not a decimal, last I checked.");
-              break;
-            }
-          }
-          try {
-            vottime = (parseFloat(args[3])>0) ? parseFloat(args[3]) : "error";
-          } catch (e) {
-            if (args[3] == "d") {
-              restime = 5;
-            } else {
-              msg.channel.send("Huh? That's not a decimal, last I checked.");
-              break;
-            }
-          }
-          if (contestantLimit == "error") {
-            msg.channel.send("That's either 1, 0, or a negative integer. All of which aren't positive and above 2.");
-            break;
-          }
-          if (restime == "error") {
-            msg.channel.send("That's not positive. I can't respond in negative/zero time!");
-            break;
-          }
-          if (vottime == "error") {
-            msg.channel.send("That's not positive. I can't respond in negative/zero time!");
-            break;
-          }
-          queue.push(contestantLimit,restime*60*1000,vottime*60*1000);
-          msg.channel.send("You've been queued with a maximum of " + contestantLimit + ", a responding timer of " + restime + " minutes, and a voting time of " + vottime + " minutes.");
+        case "blitz":
+          queue.push([msg.author,Infinity,2.5*60*1000,3*60*1000]);
+          msg.channel.send("You're using the blitz settings of no contestant limit, 2.5 minutes to respond, and 3 minutes to vote.");
+          break;
+        case "forcedDRP":
+          queue.push([msg.author,Infinity, 5*60*1000,3*60*1000]);
+          msg.channel.send("ALRIGHT HERE WE GO, YOU'VE BEEN QUEUED WITH NO CONTESTANT LIMIT, 5 MINUTES TO RESPOND, AND 4 MINUTES TO VOTE. YOU KNOW WHAT'D BE NICE? IF THIS ACTUALLY SUPPORTED FORCED DRPS. It doesn't, ha.");
+          break;
+        case "long":
+          queue.push([msg.author,Infinity, 10*60*1000, 8*60*1000]);
+          msg.channel.send("You're using the longer settings of no contestant limit, 10 minutes to respond, and 8 minutes to vote.");
+          break;
+        case "duel":
+          queue.push([msg.author,2,5*60*1000,4*60*1000]);
+          duelbegin = ["A good day for a swell battle!", "This match will get red hot!", "Here's a real high-class bout!", "A great slam and then some!", "A brawl is surely brewing!"];
+          msg.channel.send(duelbegin[Math.floor(Math.random()*5)] + "You're using the duel settings of a maximum of 2 contestants, 5 minutes to respond, and 4 minutes to vote.");
           break;
         default:
-          msg.channel.send("Too many arguments! Which do you want me to freakin' use?");
+          msg.channel.send("Uh, that's not a valid mode. Do qmt$help queue to find out more. Do qmt$help [mode] to find out more about a specific mode.");
       }
       if (status == "none") {
         client.channels.get("381995396584570880").send(queue[0][0] + " It's your turn to host a QMT!");
@@ -185,6 +215,9 @@ module.exports = (client,msg) => {
         status = "signups";
         host = queue[0][0];
       }
+      break;
+    case "qmt$respond":
+      
       break;
     case "qmt$join": 
       if (status = "none") {
@@ -210,6 +243,28 @@ module.exports = (client,msg) => {
       }
       status = "promptreq";
       client.channels.get("381995396584570880").send("The qmt hosted by " + msg.author + " has begun with " + contestantList.length + " contestants! Would the host, " + msg.author.username + " please send a prompt?");
+      break;
+    case "qmt$prompt":
+      if (status != "promptreq") {
+        msg.channel.send("I don't need no prompt right now.");
+        return;
+      }
+      if (msg.author != host) {
+        msg.channel.send("You aren't the host! Get out!");
+        return;
+      }
+      args = msg.content.split(/ +/g);
+      args = args.splice(0,1);
+      prompt = args.join(" ");
+      for (i = 0; i < contestantList.length; i++) {
+        setTimeout(function () {client.users.get(contestantList[i]).send("The prompt for " + host.username + "'s QMT is: " + prompt + "\nRespond within the next " + (Math.floor(queue[0][2]) / 60 / 1000) + " minutes, or face E L I M I N A T I O N.")}, 1000);
+      }
+      status = "respond";
+      setTimeout(function() {
+          status = "voting"; 
+          client.channels.get("381995396584570880").send("Responding has ended for " + host.username + "'s QMT. Voting has been. DM me qmt$vote-screen for a voting screen. Spectators will automatically receive a voting screen.");
+          
+        }, queue[0][2]);
       break;
     case "qmt$help":
       args = msg.content.split(/ +/g);
@@ -277,6 +332,7 @@ module.exports = (client,msg) => {
         out[responses.indexOf(thisscreen[i])] = (len-vote.indexOf(String.fromCharCode(65+i))-1)/(len-1);
       }
       votes.push(out);
+      break;
     default:
       msg.channel.send("That's not a valid command. Try qmt$help.");
   }
