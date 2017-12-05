@@ -63,13 +63,49 @@ let args;
 let duelbegin;
 let endtime;
 let argusQmt = {
-  "queue": " [contestantLimit] [restime] [vottime]"
+  "queue custom": " [contestantLimit] [restime] [vottime]",
+  "queue": " [type] {other arguments by type}",
+  "queue duel": "",
+  "queue normal": "",
+  "queue long": "",
+  "queue blitz": "",
+  "queue forcedDRP": "",
+  "join": "",
+  "respond": " [response]",
+  "vote-screen": "",
+  "vote": " [screen] [vote]",
+  "start": "",
+  "prompt": " [prompt]"
 }
 let valuesQmt = {
-  "queue": "*Queues you to host a QMT for a maximum of [contestantLimit] contestants with [restime] minutes for each response period and [vottime] minutes for each voting period.*"
+  "queue": "*Queues you to host a QMT. For more info on each type, do qmt$help queue [type]. The types are: custom, duel, normal, long, blitz.*",
+  "queue custom": "*Queues you to host a QMT with a max of [contestantLimit] contestants, [restime] minutes to respond, and [vottime] minutes to vote.*",
+  "queue duel": "*Queues you to host a QMT with a max of 2 contestants, 5 minutes to respond, and 4 minutes to vote.*",
+  "queue normal": "*Queues you to host a QMT with no contestant limit, 5 minutes to respond, and 4 minutes to vote.*",
+  "queue long": "*Queues you to host a QMT with no contestant limit, 10 minutes to respond, and 8 minutes to vote.*",
+  "queue blitz": "*Queues you to host a QMT with no contestant limit, 2.5 minutes to respond, and 3 minutes to vote.*",
+  "queue forcedDRP": "*Queues you to host a QMT with no contestant limit, 5 minutes to respond, and 4 minutes to vote.*",
+  "join": "*Joins the current QMT in signups, if any.",
+  "respond": "Responds to the current QMT prompt, if any, with [response].",
+  "vote-screen": "DMs you a pregenerated voting screen.",
+  "vote": "Vote on the screen [screen] with the vote being [vote].",
+  "start": "Start the QMT in progress, if you're a host.",
+  "prompt": "Supply a prompt."
 }
 let argdescsQmt = {
-  "queue": "*[contestantLimit]: A positive integer above 2.*\n*[restime]: A positive rational decimal.*\n*[vottime]: A positive rational decimal.*"
+  "queue": "*[type]: A valid speed type.*",
+  "queue custom": "*[contestantLimit]: A positive integer above 2.*\n*[restime]: A positive rational decimal.*\n*[vottime]: A positive rational decimal.*",
+  "queue duel": "*None.*",
+  "queue normal": "*None.*",
+  "queue long": "*None.*",
+  "queue blitz": "*None.*",
+  "queue forcedDRP": "*None.*",
+  "join": "*None.*",
+  "respond": "[response]: A string less than 300 characters long.",
+  "vote-screen": "*None.*",
+  "vote": "[screen]: The name of a screen the bot has DMed you within the previous 5 hours. [vote]: A string of capital letters from A to J.",
+  "start": "*None.*",
+  "prompt": "[prompt]: A string less than 1000 characters long."
 }
     
 module.exports = (client,msg) => {
@@ -194,7 +230,7 @@ module.exports = (client,msg) => {
           msg.channel.send("You're using the blitz settings of no contestant limit, 2.5 minutes to respond, and 3 minutes to vote.");
           break;
         case "forcedDRP":
-          queue.push([msg.author,Infinity, 5*60*1000,3*60*1000]);
+          queue.push([msg.author,Infinity, 5*60*1000,4*60*1000]);
           msg.channel.send("ALRIGHT HERE WE GO, YOU'VE BEEN QUEUED WITH NO CONTESTANT LIMIT, 5 MINUTES TO RESPOND, AND 4 MINUTES TO VOTE. YOU KNOW WHAT'D BE NICE? IF THIS ACTUALLY SUPPORTED FORCED DRPS. It doesn't, ha.");
           break;
         case "long":
@@ -267,7 +303,7 @@ module.exports = (client,msg) => {
         }, queue[0][2]);
       break;
     case "qmt$help":
-      args = msg.content.split(/ +/g);
+      args = msg.content.split("$help");
       try {
         msg.channel.send({embed: {
             color: 4369908,
