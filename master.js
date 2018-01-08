@@ -13,45 +13,51 @@ const Discord = require("discord.js");
 const client = new Discord.Client();
 const gen = require("./gen.js");
 const qmt = require("./qmt.js");
+const cnt = require("./cnt.js");
+const gms = require("./gms.js");
+
 client.on("ready", () => {
   console.log("I was always ready.");
+  client.channels.get("362937305419218946").send("All voting screens have been invalidated.");
 });
 client.on("message", (message) => {
-  if (message.channel.id == "382630363287257088" && message.content.split("discord.gg").length >= 2) {
+  if (message.channel.id == "382630363287257088" && message.content.split(/discord\.gg\/\w+/g).length >= 2) {
     message.channel.send("FILTHY CAPITALIST");
+    console.log(message.author.username + " just advertised. Screw them.");
     return;
   }
   if (message.author.bot) {return};
-  if (parseFloat(message.content) != NaN) {
-    if (Math.random() < 0.01) {
-      message.channel.send("That's Numberwang!");
-    } else if (Math.random() < 0.0001) {
-      message.channel.send("That's Wangernumb!");
-      message.channel.send(message.author + ", you are today's Numberwang.");
-      message.channel.send("Come back tomorrow for more Numberwang!");
-    }
-  } else {
-    if (message.content.split(" ").length == 1 && Math.random() < 0.0001) {
-      message.channel.send("I'm sorry, but " + message.content + " is a real number, as in the popular phrase, I only have " + message.content + " cookies left in the jar.");
-    }
-  }
-  if (message.channel.id != "359448610691350529" && message.channel.id != "380454181879939073" && message.channel.id != "381995396584570880" && message.channel.type != "dm") {
-    return;
-  }
   if (message.content[3] != "$") {return};
+  console.log(message.author.username + " tried to do " + message.content);
   switch (message.content.substring(0,3)) {
     case "gen":
-      gen(message);
+      gen(client, message);
       break;
     case "qmt":
-      qmt(client,message);
+      qmt(client, message);
+      break;
+    case "gms":
+      gms(client, message);
+      break;
+    case "cnt":
+      cnt(client, message);
       break;
     case "die":
       if (message.author.id != "248953835899322370") {message.channel.send("nice try"); return};
       message.channel.send("So long, farewell!");
       break;
+    case "are":
+      if (message.author.id != "248953835899322370") {return}
+      message.channel.send("OH HELLLLLL NO.");
+      break;
     default:
       message.channel.send(message.content.substring(0,3) + " is not a valid module. The current modules are: gen (**gen**eral), qmt (**Q**uick **M**ini**T**WOWs), and puz (**puz**zles).");
   }
+});
+client.on("GuildMemberAdd", (member) => {
+  client.channels.get("396689970259165184").send(member.username + " joined. Would an online border inspector please process the entrant.");
+});
+client.on("GuildMemberRemove", (member) => {
+  client.channels.get("396689970259165184").send(member.username + " has covertly left the server, under cover of darkness. They will not be missed.");
 });
 client.login(process.env.TOKEN);
