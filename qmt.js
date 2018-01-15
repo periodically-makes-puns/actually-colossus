@@ -17,7 +17,7 @@ function Map() {
     return true;
   }
   this.entries = function* () {
-    for (let i = 0; i < this.keys.length; i++) {
+    for (let i = 0; i < this.keylist.length; i++) {
       yield [this.keylist[i], this.valuelist[i]];
     }
   }
@@ -35,6 +35,10 @@ function Map() {
     }
   }
   this.set = function (key,value) {
+    if (this.has(key)) {
+      this.valuelist[this.keylist.indexOf(key)] = value;
+      return this;
+    }
     this.keylist.push(key);
     this.valuelist.push(value);
     this.size++;
@@ -49,65 +53,32 @@ function Map() {
 let vscreens = new Map();
 let weights = new Map();
 let votescreens = new Map();
+let responses = new Map();
 let votes = [];
 let queue = [];
 let contestantList = [];
+let spectatorList = [];
 let status = "none";
 let prompt;
 let restime;
 let vottime;
 let contestantLimit;
-let responses = [];
 let host;
 let args;
-let duelbegin;
+let notify;
+let remind;
+let kill;
 let endtime;
+let i = 0;
 let argusQmt = {
-  "queue custom": " [contestantLimit] [restime] [vottime]",
-  "queue": " [type] {other arguments by type}",
-  "queue duel": "",
-  "queue normal": "",
-  "queue long": "",
-  "queue blitz": "",
-  "queue forcedDRP": "",
-  "join": "",
-  "respond": " [response]",
-  "vote-screen": "",
-  "vote": " [screen] [vote]",
-  "start": "",
-  "prompt": " [prompt]"
+  "queue": " [contestantLimit] [restime] [vottime]"
 }
 let valuesQmt = {
-  "queue": "*Queues you to host a QMT. For more info on each type, do qmt$help queue [type]. The types are: custom, duel, normal, long, blitz.*",
-  "queue custom": "*Queues you to host a QMT with a max of [contestantLimit] contestants, [restime] minutes to respond, and [vottime] minutes to vote.*",
-  "queue duel": "*Queues you to host a QMT with a max of 2 contestants, 5 minutes to respond, and 4 minutes to vote.*",
-  "queue normal": "*Queues you to host a QMT with no contestant limit, 5 minutes to respond, and 4 minutes to vote.*",
-  "queue long": "*Queues you to host a QMT with no contestant limit, 10 minutes to respond, and 8 minutes to vote.*",
-  "queue blitz": "*Queues you to host a QMT with no contestant limit, 2.5 minutes to respond, and 3 minutes to vote.*",
-  "queue forcedDRP": "*Queues you to host a QMT with no contestant limit, 5 minutes to respond, and 4 minutes to vote.*",
-  "join": "*Joins the current QMT in signups, if any.",
-  "respond": "Responds to the current QMT prompt, if any, with [response].",
-  "vote-screen": "DMs you a pregenerated voting screen.",
-  "vote": "Vote on the screen [screen] with the vote being [vote].",
-  "start": "Start the QMT in progress, if you're a host.",
-  "prompt": "Supply a prompt."
+  "queue": "*Queues you to host a QMT for a maximum of [contestantLimit] contestants with [restime] minutes for each response period and [vottime] minutes for each voting period.*"
 }
 let argdescsQmt = {
-  "queue": "*[type]: A valid speed type.*",
-  "queue custom": "*[contestantLimit]: A positive integer above 2.*\n*[restime]: A positive rational decimal.*\n*[vottime]: A positive rational decimal.*",
-  "queue duel": "*None.*",
-  "queue normal": "*None.*",
-  "queue long": "*None.*",
-  "queue blitz": "*None.*",
-  "queue forcedDRP": "*None.*",
-  "join": "*None.*",
-  "respond": "[response]: A string less than 300 characters long.",
-  "vote-screen": "*None.*",
-  "vote": "[screen]: The name of a screen the bot has DMed you within the previous 5 hours. [vote]: A string of capital letters from A to J.",
-  "start": "*None.*",
-  "prompt": "[prompt]: A string less than 1000 characters long."
+  "queue": "*[contestantLimit]: A positive integer above 2.*\n*[restime]: A positive rational decimal.*\n*[vottime]: A positive rational decimal.*"
 }
-    
 module.exports = (client,msg) => {
   switch (msg.content.split(/ +/g)[0]) {
     case "qmt$queue":
@@ -120,7 +91,6 @@ module.exports = (client,msg) => {
       }
       switch (args[1]) {
         case "custom":
-          args = args.splice(1,1);
           switch (args.length) {
             case 1:
               queue.push([msg.author,Infinity,5*60*1000,4*60*1000]);
@@ -162,11 +132,11 @@ module.exports = (client,msg) => {
               }
               if (contestantLimit == "error") {
                 msg.channel.send("That's either 1, 0, or a negative integer. All of which aren't positive and above 2.");
-                break;
+                return;
               }
               if (restime == "error") {
                 msg.channel.send("That's not positive. I can't respond in negative/zero time!");
-                break;
+                return;
               }
               queue.push([msg.author,contestantLimit,restime*60*1000,4*60*1000]);
               msg.channel.send("You've been queued with a maximum of " + contestantLimit + " contestants, a responding timer of " + restime + " minutes, and a voting time of " + 4 + " minutes.");
@@ -196,7 +166,7 @@ module.exports = (client,msg) => {
                 vottime = (parseFloat(args[3])>0) ? parseFloat(args[3]) : "error";
               } catch (e) {
                 if (args[3] == "d") {
-                  restime = 5;
+                  vottime = 4;
                 } else {
                   msg.channel.send("Huh? That's not a decimal, last I checked.");
                   break;
@@ -204,15 +174,15 @@ module.exports = (client,msg) => {
               }
               if (contestantLimit == "error") {
                 msg.channel.send("That's either 1, 0, or a negative integer. All of which aren't positive and above 2.");
-                break;
+                return;
               }
               if (restime == "error") {
                 msg.channel.send("That's not positive. I can't respond in negative/zero time!");
-                break;
+                return;
               }
               if (vottime == "error") {
                 msg.channel.send("That's not positive. I can't respond in negative/zero time!");
-                break;
+                return;
               }
               queue.push([msg.author,contestantLimit,restime*60*1000,vottime*60*1000]);
               msg.channel.send("You've been queued with a maximum of " + contestantLimit + " contestants, a responding timer of " + restime + " minutes, and a voting time of " + vottime + " minutes.");
@@ -239,11 +209,11 @@ module.exports = (client,msg) => {
           break;
         case "duel":
           queue.push([msg.author,2,5*60*1000,4*60*1000]);
-          duelbegin = ["A good day for a swell battle!", "This match will get red hot!", "Here's a real high-class bout!", "A great slam and then some!", "A brawl is surely brewing!"];
-          msg.channel.send(duelbegin[Math.floor(Math.random()*5)] + "You're using the duel settings of a maximum of 2 contestants, 5 minutes to respond, and 4 minutes to vote.");
+          msg.channel.send(["A good day for a swell battle!", "This match will get red hot!", "Here's a real high-class bout!", "A great slam and then some!", "A brawl is surely brewing!"][Math.floor(Math.random()*5)] + " You're using the duel settings of a maximum of 2 contestants, 5 minutes to respond, and 4 minutes to vote.");
           break;
         default:
           msg.channel.send("Uh, that's not a valid mode. Do qmt$help queue to find out more. Do qmt$help [mode] to find out more about a specific mode.");
+          return;
       }
       if (status == "none") {
         client.channels.get("381995396584570880").send(queue[0][0] + " It's your turn to host a QMT!");
@@ -253,28 +223,53 @@ module.exports = (client,msg) => {
       }
       break;
     case "qmt$respond":
-      
+      if (msg.channel.type != "dm") {
+        msg.channel.send("Keep yo response secret, ya bozo!");
+        return;
+      }
+      if (contestantList.indexOf(msg.author.id) == -1) {
+        msg.channel.send("Wait. Are you even in this mTWOW? I think not...");
+        return;
+      }
+      if (status != "respond") {
+        msg.channel.send("I don't need no responses right now. Try again later?");
+      }
+      args = msg.content.split(/ +/g);
+      args.splice(0,1);
+      responses.set(msg.author.id, args.join(" "));
       break;
     case "qmt$join": 
-      if (status = "none") {
+      if (status == "none") {
         msg.channel.send("There's no QMT in progress. Maybe later?");
       } else {
-        if (status = "signups") {
+        if (status == "signups") {
           contestantList.push(msg.author.id);
+          spectatorList.push(msg.author.id);
           msg.channel.send("Great! You're in!");
           client.channels.get("381995396584570880").send(msg.author.username + " just joined! There are now " + contestantList.length + " contestants!");
         } else {
           msg.channel.send("Whoops, ya joined late. Try again later.");
         }
       }
-      if (contestantList.length == contestantLimit) {
+      if (queue.length == 0) {
+        msg.channel.send("Nobody's even queued...");
+      } 
+      if (contestantList.length == queue[0][1]) {
         status = "promptreq";
-        client.channels.get("381995396584570880").send("The qmt hosted by " + msg.author + " has begun with " + contestantList.length + " contestants! Would the host, " + msg.author.username + " please send a prompt?");
+        client.channels.get("381995396584570880").send("The qmt hosted by " + host + " has begun with " + contestantList.length + " contestants! Would the host, " + host.username + " please send a prompt?");
       }
       break;
     case "qmt$start":
       if (msg.author != host) {
         msg.channel.send("Hey, you aren't the host! Get out!");
+        return;
+      }
+      if (status != "signups") {
+        msg.channel.send("There's no QMT in signups to start...");
+        return;
+      }
+      if (contestantList.length < 2) {
+        msg.channel.send("Not enough contestants... yet.");
         return;
       }
       status = "promptreq";
@@ -290,20 +285,58 @@ module.exports = (client,msg) => {
         return;
       }
       args = msg.content.split(/ +/g);
-      args = args.splice(0,1);
+      args.splice(0,1);
       prompt = args.join(" ");
-      for (i = 0; i < contestantList.length; i++) {
-        setTimeout(function () {client.users.get(contestantList[i]).send("The prompt for " + host.username + "'s QMT is: " + prompt + "\nRespond within the next " + (Math.floor(queue[0][2]) / 60 / 1000) + " minutes, or face E L I M I N A T I O N.")}, 1000);
+      let i = 0;
+      let notify = setInterval(function () {
+        client.users.get(contestantList[i]).send("The prompt for " + host.username + "'s QMT is: " + prompt + "\n Respond within the next " + (Math.floor(queue[0][2]) / 60 / 1000) + " minutes, or face E L I M I N A T I O N.");
+        i++;
+      }, 500);
+      let notdone = true;
+      while (notdone) {
+        if (i == contestantList.length) {
+          clearInterval(notify);
+          notdone = false;
+        }
       }
       status = "respond";
-      setTimeout(function() {
-          status = "voting"; 
-          client.channels.get("381995396584570880").send("Responding has ended for " + host.username + "'s QMT. Voting has been. DM me qmt$vote-screen for a voting screen. Spectators will automatically receive a voting screen.");
+      setTimeout(function () {
+        if (queue[0][2] > 60000) {
+          remind = setInterval(function () {
+            if (!responses.has(contestantList[i])) {
+              client.users.get(contestantList[i]).send("Respond within the next minute, or face E L I M I N A T I O N.");
+            }
+            i++;
+          }, 500);
+        }
+        setTimeout(function () {
           
-        }, queue[0][2]);
+        })
+      }, Math.floor(queue[0][2]));
       break;
     case "qmt$help":
-      args = msg.content.split("$help");
+      args = msg.content.split("$help ");
+      if (msg.content == "qmt$help") {
+        msg.channel.send({embed: {
+            color: 4369908,
+            title: "Module QMT",
+            fields: [
+              {
+                name: "**Commands**",
+                value: "*qmt$help\nqmt$queue\nqmt$join\nqmt$respond\nqmt$vote-screen\nqmt$vote\nqmt$start\nqmt$prompt*"
+              },
+              {
+                name: "For help on a command in QMT qmt$[cmd]...",
+                value: "Try qmt$help [cmd]."
+              }
+            ],
+            timestamp: new Date(),
+            footer: {
+              text: "Contact PMP#5728 for all issues."
+            }
+          } 
+        });
+      }
       try {
         msg.channel.send({embed: {
             color: 4369908,
@@ -373,3 +406,4 @@ module.exports = (client,msg) => {
       msg.channel.send("That's not a valid command. Try qmt$help.");
   }
 }
+
