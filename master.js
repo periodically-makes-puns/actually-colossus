@@ -14,14 +14,13 @@ const client = new Discord.Client();
 const gen = require("./gen.js");
 const qmt = require("./qmt.js");
 const cnt = require("./cnt.js");
-const gms = require("./gms.js");
-
+const bot = require("./bot.js");
+let config = require("./config.json");
 client.on("ready", () => {
   console.log("I was always ready.");
-  client.channels.get("362937305419218946").send("All voting screens have been invalidated.");
 });
 client.on("message", (message) => {
-  if (message.channel.id == "382630363287257088" && message.content.split(/discord\.gg\/\w+/g).length >= 2) {
+  if (message.channel.id == "382630363287257088" && message.content.split("discord.gg").length >= 2) {
     message.channel.send("FILTHY CAPITALIST");
     console.log(message.author.username + " just advertised. Screw them.");
     return;
@@ -31,24 +30,15 @@ client.on("message", (message) => {
   console.log(message.author.username + " tried to do " + message.content);
   switch (message.content.substring(0,3)) {
     case "gen":
-      gen(client, message);
+      try {
+        gen(client, message);
+      } catch (e) {
+        message.channel.send("Error detected. Error has been logged. Continue with your life.");
+        console.error(e);
+      }
       break;
-    case "qmt":
-      qmt(client, message);
-      break;
-    case "gms":
-      gms(client, message);
-      break;
-    case "cnt":
-      cnt(client, message);
-      break;
-    case "die":
-      if (message.author.id != "248953835899322370") {message.channel.send("nice try"); return};
-      message.channel.send("So long, farewell!");
-      break;
-    case "are":
-      if (message.author.id != "248953835899322370") {return}
-      message.channel.send("OH HELLLLLL NO.");
+    case "bot":
+      bot(client, message);
       break;
     default:
       message.channel.send(message.content.substring(0,3) + " is not a valid module. The current modules are: gen (**gen**eral), qmt (**Q**uick **M**ini**T**WOWs), and puz (**puz**zles).");
