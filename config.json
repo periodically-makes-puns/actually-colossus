@@ -1,0 +1,30 @@
+// This will have your data.
+[
+  "votescreens": [
+    // List of screen names, seperated by person who requested them.
+    // First entry in each subarray is always ID.
+    // Next entries in the subarrays list screen names.
+    // Repeat for each person.
+  ],
+  "vscreens": [
+    // List of screens, seperated by each screen.
+    // First entry in each subarray is screen name.
+    // Next entries are the responses, in order as displayed.
+  ],
+  "votes": [
+    //List of votes, seperated by each vote.
+    // First entry in each subarray is screen name.
+    // Second entry in each subarray is ID of voter.
+    // Next entries are score of the response. Index is determined by the order in the responses section of the config. -1 denotes not voted on.
+  ],
+  "responses": [
+    // List of responses, seperated by responder.
+    // First entry is ID of responder.
+    // Second entry is response.
+  ],
+  "status": "voting", // responding, voting, or none. Set with gen$set-status. If you choose responding, it will distribute "response requested" roles.
+  "votecount": [
+    // List of count of vote by person, seperated by voter.
+    // First entry is ID of voter.
+    // Second entry is number of votes.
+  ]
